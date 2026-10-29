@@ -46,3 +46,6 @@ app.*.map.json
 
 # Local build config with Supabase keys
 env.json
+
+# Kotlin compiler caches
+android/.kotlin/
