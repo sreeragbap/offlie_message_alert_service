@@ -85,25 +85,28 @@ Set `API_BASE_URL` in `env.json` according to where the app runs:
 | iOS simulator | `http://localhost:8080` |
 | Real phone on the same Wi-Fi | `http://<your Mac's LAN IP>:8080` |
 
-Plain `http://` is allowed only for local development: any host in Android debug builds, only `localhost` in Android release builds (for `adb reverse`), and local networking on iOS. Production must use HTTPS.
+Plain `http://` is allowed only for local development. Debug builds allow any host. Release builds allow `localhost` and the host in `API_BASE_URL` when it is `http://`; the Android build reads it from the config file. iOS allows local networking. Production must use HTTPS.
 
-### Release APK
+### Release APK to install on your phone
 
-Every build command needs the config file, otherwise the app opens on "App is not configured":
+Every build command needs a config file, otherwise the app opens on "App is not configured".
 
-```bash
-flutter build apk --release --dart-define-from-file=env.device.json
-```
+1. Find your Mac's Wi-Fi IP:
 
-In VS Code, the task **Build release APK (phone)** runs this. To try it on a USB-connected phone against the backend on your Mac:
+   ```bash
+   ipconfig getifaddr en0
+   ```
 
-```bash
-flutter install --release
-```
+2. Make `mobile/env.lan.json`, a copy of `env.json` with `"API_BASE_URL": "http://<that IP>:8080"`. It is git-ignored.
+3. Build the APK. In VS Code, the task **Build release APK (Wi-Fi)** runs the same command:
 
-```bash
-adb reverse tcp:8080 tcp:8080
-```
+   ```bash
+   flutter build apk --release --dart-define-from-file=env.lan.json
+   ```
+
+4. Copy `mobile/build/app/outputs/flutter-apk/app-release.apk` to the phone (USB file transfer, Google Drive, etc.) and open it to install. Allow "install unknown apps" when asked.
+
+The phone must be on the same Wi-Fi as the Mac, and the backend must be running. If the Mac's IP changes, rebuild with the new IP. If the debug version is already installed, uninstall it first: the two are signed differently.
 
 A release APK for other people needs a backend hosted on HTTPS (set `API_BASE_URL` to it) and your own signing key. For now it is signed with the debug key.
 
