@@ -8,6 +8,14 @@
       "command": "${env:HOME}/Library/Android/sdk/platform-tools/adb reverse tcp:8080 tcp:8080",
       "presentation": { "reveal": "silent" },
       "problemMatcher": []
+    },
+    {
+      "label": "Build release APK (phone)",
+      "detail": "Release APK with env.device.json; install it, then run 'adb reverse 8080'",
+      "type": "shell",
+      "command": "flutter build apk --release --dart-define-from-file=env.device.json",
+      "options": { "cwd": "${workspaceFolder}/mobile" },
+      "problemMatcher": []
     }
   ]
 }

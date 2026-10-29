@@ -85,7 +85,27 @@ Set `API_BASE_URL` in `env.json` according to where the app runs:
 | iOS simulator | `http://localhost:8080` |
 | Real phone on the same Wi-Fi | `http://<your Mac's LAN IP>:8080` |
 
-Plain `http://` is allowed only for local development (Android debug builds, iOS local networking). Production must use HTTPS.
+Plain `http://` is allowed only for local development: any host in Android debug builds, only `localhost` in Android release builds (for `adb reverse`), and local networking on iOS. Production must use HTTPS.
+
+### Release APK
+
+Every build command needs the config file, otherwise the app opens on "App is not configured":
+
+```bash
+flutter build apk --release --dart-define-from-file=env.device.json
+```
+
+In VS Code, the task **Build release APK (phone)** runs this. To try it on a USB-connected phone against the backend on your Mac:
+
+```bash
+flutter install --release
+```
+
+```bash
+adb reverse tcp:8080 tcp:8080
+```
+
+A release APK for other people needs a backend hosted on HTTPS (set `API_BASE_URL` to it) and your own signing key. For now it is signed with the debug key.
 
 - Run the tests:
 
