@@ -106,7 +106,7 @@ Every build command needs a config file, otherwise the app opens on "App is not 
 
 4. Copy `mobile/build/app/outputs/flutter-apk/app-release.apk` to the phone (USB file transfer, Google Drive, etc.) and open it to install. Allow "install unknown apps" when asked.
 
-The phone must be on the same Wi-Fi as the Mac, and the backend must be running. If the Mac's IP changes, rebuild with the new IP. If the debug version is already installed, uninstall it first: the two are signed differently.
+The phone must be on the same Wi-Fi as the Mac, and the backend must be running. If the Mac's IP changes, rebuild with the new IP.
 
 A release APK for other people needs a backend hosted on HTTPS (set `API_BASE_URL` to it) and your own signing key. For now it is signed with the debug key.
 
