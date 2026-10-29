@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Mobile: phone (USB)",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "mobile",
+      "program": "lib/main.dart",
+      "toolArgs": ["--dart-define-from-file=env.device.json"],
+      "preLaunchTask": "adb reverse 8080"
+    },
+    {
+      "name": "Mobile: Android emulator",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "mobile",
+      "program": "lib/main.dart",
+      "toolArgs": ["--dart-define-from-file=env.json"]
+    }
+  ]
+}
