@@ -49,19 +49,22 @@ class AlertDetailCubit extends Cubit<AlertDetailState> {
   }
 
   /// The user told us they sent the SMS. The phone cannot confirm delivery.
-  Future<void> confirmSent() => _act((id) => _alerts.markSentFromDevice(id));
+  /// Returns true when the server recorded it.
+  Future<bool> confirmSent() => _act((id) => _alerts.markSentFromDevice(id));
 
-  Future<void> cancel() => _act((id) => _alerts.cancel(id));
+  Future<bool> cancel() => _act((id) => _alerts.cancel(id));
 
-  Future<void> _act(Future<Alert> Function(String id) action) async {
+  Future<bool> _act(Future<Alert> Function(String id) action) async {
     final current = state.alert;
     emit(AlertDetailState(alert: current, busy: true));
     try {
       final updated = await action(alertId);
       await _reminders.cancel(alertId);
       emit(AlertDetailState(alert: Loaded(updated)));
+      return true;
     } on ApiException catch (e) {
       emit(AlertDetailState(alert: current, error: e.message));
+      return false;
     }
   }
 }

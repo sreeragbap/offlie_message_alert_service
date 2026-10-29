@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/notifications/alert_reminders.dart';
 import '../../../core/sms/sms_composer.dart';
@@ -61,7 +62,17 @@ class _AlertDetailViewState extends State<_AlertDetailView> {
         ],
       ),
     );
-    if (sent == true) await cubit.confirmSent();
+    if (sent == true && await cubit.confirmSent() && mounted) _close('Marked as sent');
+  }
+
+  /// Leaves the screen after a successful action, e.g. back to Home or History.
+  void _close(String message) {
+    showSnack(context, message);
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/');
+    }
   }
 
   Future<void> _cancel() async {
@@ -76,7 +87,9 @@ class _AlertDetailViewState extends State<_AlertDetailView> {
         ],
       ),
     );
-    if (confirmed == true && mounted) await context.read<AlertDetailCubit>().cancel();
+    if (confirmed == true && mounted && await context.read<AlertDetailCubit>().cancel() && mounted) {
+      _close('Alert cancelled');
+    }
   }
 
   @override
