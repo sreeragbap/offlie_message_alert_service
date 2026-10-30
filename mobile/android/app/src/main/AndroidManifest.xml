@@ -1,9 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- Reminder notifications for scheduled alerts; survive reboots. No SMS permissions are used:
-         the SMS is sent by the user from the system messaging app. -->
+    <!-- Reminder notifications for scheduled alerts; survive reboots. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Relay mode only: the relay phone sends automatic alerts from its SIM. Requested at runtime when
+         relay mode is switched on. Google Play allows this permission only for default SMS apps, so a
+         Play Store build must remove it (see docs/02-decisions.md, D10). -->
+    <uses-permission android:name="android.permission.SEND_SMS"/>
+    <uses-feature android:name="android.hardware.telephony" android:required="false"/>
     <application
         android:label="Missed Message Alert"
         android:name="${applicationName}"

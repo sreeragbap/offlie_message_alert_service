@@ -1,6 +1,7 @@
 package com.oma.platform;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import com.oma.alert.Platform;
 
@@ -23,10 +24,20 @@ public final class PlatformCatalog {
 			boolean automaticDetectionConnected, String explanation) {
 	}
 
-	public static final List<PlatformInfo> ALL = List.of(
-			new PlatformInfo(Platform.WHATSAPP, "WhatsApp", true, AutomaticDetection.BUSINESS_ACCOUNTS_ONLY, false,
-					"WhatsApp shares delivery status only for messages a business sends through the WhatsApp "
-							+ "Business Platform. Personal chats can't be monitored by any app, so send a manual alert."),
+	/** @param whatsappConnected whether this deployment has a WhatsApp Business number configured */
+	public static List<PlatformInfo> all(boolean whatsappConnected) {
+		PlatformInfo whatsapp = whatsappConnected
+				? new PlatformInfo(Platform.WHATSAPP, "WhatsApp", true, AutomaticDetection.BUSINESS_ACCOUNTS_ONLY, true,
+						"Messages you send from the WhatsApp tab go out from your business number and are tracked: "
+								+ "if one isn't delivered in time, your relay phone texts the person. Chats in your "
+								+ "personal WhatsApp still can't be monitored; send a manual alert for those.")
+				: new PlatformInfo(Platform.WHATSAPP, "WhatsApp", true, AutomaticDetection.BUSINESS_ACCOUNTS_ONLY, false,
+						"WhatsApp shares delivery status only for messages a business sends through the WhatsApp "
+								+ "Business Platform. Personal chats can't be monitored by any app, so send a manual alert.");
+		return Stream.concat(Stream.of(whatsapp), OTHERS.stream()).toList();
+	}
+
+	private static final List<PlatformInfo> OTHERS = List.of(
 			new PlatformInfo(Platform.TELEGRAM, "Telegram", true, AutomaticDetection.NOT_AVAILABLE, false,
 					"Telegram does not share delivery status with other apps. Send a manual alert."),
 			new PlatformInfo(Platform.MESSENGER, "Messenger", true, AutomaticDetection.BUSINESS_ACCOUNTS_ONLY, false,

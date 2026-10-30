@@ -29,6 +29,7 @@ The owner asked whether alerts can be sent through the phone's own SIM instead o
 
 ## D4 — No Meta Business account / spare number
 - Track B is postponed. Revisit when an account and a number not used on consumer WhatsApp are available.
+- **Superseded by D9 (2026-10-30):** the owner asked for fully automatic alerts and chose to build Track B.
 
 ## D5 — Database: Supabase PostgreSQL in Asia
 - The existing project is in **Ireland (eu-west-1)**. Supabase cannot move a project between regions; the documented path is to create a new project in the target region and migrate ([Supabase: change project region](https://supabase.com/docs/guides/troubleshooting/change-project-region-eWJo5Z)).
@@ -43,3 +44,35 @@ The owner asked whether alerts can be sent through the phone's own SIM instead o
 
 ## D8 — Tests use embedded PostgreSQL (no Docker on the dev machine)
 - Integration tests run against a real PostgreSQL 17 started in-process (zonky embedded-postgres), so SQL, constraints and locking are tested on the real engine.
+
+## D9 — Track B: automatic alerts for messages sent through the WhatsApp Business Platform
+- **Decided:** 2026-10-30. The owner wants the SMS sent automatically when the receiver is offline, without starting an alert.
+- **Why this way:** personal WhatsApp gives no delivery status to other apps (Phase 0). The Cloud API reports `sent` / `delivered` / `read` per message, so "not delivered after N minutes" can be detected.
+- **Coexistence ruled out:** Meta's coexistence mode keeps the WhatsApp Business app on the same number, but messages typed in that app arrive only as `smb_message_echoes` webhooks, without delivery statuses, and onboarding is only for Tech Providers/Solution Partners ([Meta docs](https://developers.facebook.com/docs/whatsapp/embedded-signup/custom-flows/onboarding-business-app-users)). So tracked messages are sent from this app's WhatsApp tab.
+- **Rules that follow:**
+  - Free text is allowed only within 24 h of the recipient's last message; otherwise an approved template is sent. The backend chooses per message.
+  - One business number per deployment. A reply is attributed only to users who have messaged that recipient through the app.
+  - A retried send with the same `clientRequestId` never sends twice. A send with no answer from WhatsApp is recorded as `UNKNOWN` and not retried automatically.
+  - A status arriving before the wamid is stored is kept and applied afterwards.
+  - The webhook is trusted only with a valid `X-Hub-Signature-256` signature.
+
+## D10 — Automatic SMS from a relay phone (user's own SIM)
+- **Decided:** 2026-10-30 (owner chose the relay phone over a DLT provider).
+- **How:** an Android phone signed in to the same account runs the app in relay mode. It claims due `RELAY_SMS` alerts every 15 s (2-minute lease, `SKIP LOCKED`), sends with `SmsManager` and reports `SENT` / `RETRYABLE_FAILURE` / `FAILED` / `UNKNOWN`.
+  - A lease that expires without a report becomes `SMS_UNKNOWN` and is never resent.
+  - "No service" and "radio off" are retried with backoff.
+  - Alerts waiting more than 24 h expire.
+- **Limits:**
+  - Needs `SEND_SMS`, which Google Play allows only for default SMS apps. The APK is installed directly; a Play Store build must drop relay mode.
+  - iOS cannot send SMS from apps.
+  - Personal, low-volume use only; automated bulk SMS from a personal SIM breaks TRAI rules (D3).
+  - The phone must stay on, online and on the relay screen.
+
+## D11 — Public HTTPS for webhooks: Cloudflare quick tunnel while developing
+- **Decided:** 2026-10-30.
+- **How:** the backend stays on the Mac; `cloudflared tunnel --url http://localhost:8080` gives a temporary `trycloudflare.com` address for Meta's webhook.
+- **Limits:**
+  - The address changes on restart, and the Meta webhook URL must be updated.
+  - Everything works only while the Mac is on.
+- **Safety:** API docs are disabled in `.env`. `/api/**` needs a Supabase token, `/webhooks/whatsapp` needs Meta's signature, and only `/actuator/health` is open.
+- **Next:** host the backend in Mumbai/Singapore with a fixed HTTPS address before relying on it.

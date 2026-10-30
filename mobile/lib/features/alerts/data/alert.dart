@@ -74,6 +74,16 @@ class Alert extends Equatable {
 
   bool get isDeviceChannel => channel == 'DEVICE_SMS';
 
+  bool get isRelayChannel => channel == 'RELAY_SMS';
+
+  /// State text that names who actually sent the SMS.
+  String get stateLabel => switch (state) {
+        AlertState.smsAccepted when isRelayChannel => 'Sent by relay phone',
+        AlertState.due when isRelayChannel => 'Waiting for relay phone',
+        AlertState.expired when isRelayChannel => 'Relay phone offline',
+        _ => state.label,
+      };
+
   /// The user can open their SMS app for this alert (early sending is allowed).
   bool get canSendFromDevice => isOpen && isDeviceChannel && recipientPhone != null;
 

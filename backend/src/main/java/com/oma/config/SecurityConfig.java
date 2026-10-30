@@ -35,6 +35,8 @@ class SecurityConfig {
 				.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 				// Only served when OMA_API_DOCS_ENABLED=true.
 				.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+				// Meta's webhook: authenticated by the X-Hub-Signature-256 HMAC, checked in the controller.
+				.requestMatchers("/webhooks/whatsapp").permitAll()
 				.requestMatchers("/api/**").authenticated()
 				.anyRequest().denyAll())
 			.oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()));

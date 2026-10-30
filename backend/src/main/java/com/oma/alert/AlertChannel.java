@@ -6,6 +6,12 @@ public enum AlertChannel {
 	DEVICE_SMS,
 
 	/** The backend sends the SMS through an {@link com.oma.sms.SmsGateway}. Off in the MVP. */
-	SERVER_SMS
+	SERVER_SMS,
+
+	/**
+	 * The user's relay phone (an Android phone with a SIM running the app in relay mode) sends the SMS
+	 * automatically. Used for WhatsApp messages that were not delivered in time.
+	 */
+	RELAY_SMS
 
 }

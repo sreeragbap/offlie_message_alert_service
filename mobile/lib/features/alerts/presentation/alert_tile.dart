@@ -19,15 +19,18 @@ class AlertTile extends StatelessWidget {
       leading: CircleAvatar(child: Icon(alertIcon(alert.state), size: 20)),
       title: Text(alert.recipientName ?? 'Removed recipient'),
       subtitle: Text('${alert.platform.label} · $prefix${formatWhen(when)}'),
-      trailing: AlertStateChip(state: alert.state),
+      trailing: AlertStateChip(state: alert.state, label: alert.stateLabel),
     );
   }
 }
 
 class AlertStateChip extends StatelessWidget {
-  const AlertStateChip({super.key, required this.state});
+  const AlertStateChip({super.key, required this.state, this.label});
 
   final AlertState state;
+
+  /// Overrides [AlertState.label], e.g. with [Alert.stateLabel].
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +44,7 @@ class AlertStateChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(8)),
-      child: Text(state.label, style: TextStyle(color: foreground, fontSize: 12)),
+      child: Text(label ?? state.label, style: TextStyle(color: foreground, fontSize: 12)),
     );
   }
 }

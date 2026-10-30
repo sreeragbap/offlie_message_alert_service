@@ -15,7 +15,10 @@ import '../features/preferences/presentation/preferences_page.dart';
 import '../features/recipients/data/recipient.dart';
 import '../features/recipients/presentation/recipient_form_page.dart';
 import '../features/recipients/presentation/recipients_page.dart';
+import '../features/relay/presentation/relay_page.dart';
 import '../features/settings/presentation/settings_page.dart';
+import '../features/whatsapp/presentation/whatsapp_compose_page.dart';
+import '../features/whatsapp/presentation/whatsapp_page.dart';
 import 'home_shell.dart';
 
 const _publicRoutes = {'/welcome', '/sign-in', '/sign-up'};
@@ -37,6 +40,7 @@ GoRouter createRouter(SessionCubit session) {
         builder: (_, _, shell) => HomeShell(shell: shell),
         branches: [
           StatefulShellBranch(routes: [GoRoute(path: '/', builder: (_, _) => const DashboardPage())]),
+          StatefulShellBranch(routes: [GoRoute(path: '/whatsapp', builder: (_, _) => const WhatsAppPage())]),
           StatefulShellBranch(routes: [GoRoute(path: '/recipients', builder: (_, _) => const RecipientsPage())]),
           StatefulShellBranch(routes: [GoRoute(path: '/history', builder: (_, _) => const AlertHistoryPage())]),
           StatefulShellBranch(routes: [GoRoute(path: '/settings', builder: (_, _) => const SettingsPage())]),
@@ -57,6 +61,11 @@ GoRouter createRouter(SessionCubit session) {
         path: '/recipients/edit',
         builder: (_, state) => RecipientFormPage(existing: state.extra as Recipient?),
       ),
+      GoRoute(
+        path: '/whatsapp/new',
+        builder: (_, state) => WhatsAppComposePage(recipientId: state.uri.queryParameters['recipientId']),
+      ),
+      GoRoute(path: '/relay', builder: (_, _) => const RelayPage()),
       GoRoute(path: '/preferences', builder: (_, _) => const PreferencesPage()),
       GoRoute(path: '/help', builder: (_, _) => const HelpPage()),
     ],

@@ -116,6 +116,69 @@ public class AlertService {
 		return new Created(get(userId, id), false);
 	}
 
+	/** Why no delivery-timeout alert was created for a WhatsApp message. */
+	public enum NoAlertReason {
+
+		RECIPIENT_OPTED_OUT, RECIPIENT_ALERTS_DISABLED, RECIPIENT_RATE_LIMITED, DAILY_RATE_LIMITED, MESSAGE_TOO_LONG
+
+	}
+
+	public record DeliveryAlert(UUID alertId, NoAlertReason skippedBecause) {
+	}
+
+	/**
+	 * Schedules the SMS that the relay phone sends if WhatsApp does not report delivery within
+	 * {@code delayMinutes}. Applies the same rules as user-triggered alerts, but never fails: the
+	 * WhatsApp message has already gone out, so a rule that blocks the alert is reported instead.
+	 * Call with the recipient row locked ({@link RecipientRepository#findForUpdate}).
+	 */
+	@Transactional
+	public DeliveryAlert scheduleDeliveryTimeoutAlert(UUID userId, Recipient recipient, UUID clientRequestId,
+			int delayMinutes) {
+		if (recipient.optedOut()) {
+			return new DeliveryAlert(null, NoAlertReason.RECIPIENT_OPTED_OUT);
+		}
+		if (!recipient.alertsEnabled()) {
+			return new DeliveryAlert(null, NoAlertReason.RECIPIENT_ALERTS_DISABLED);
+		}
+		AlertPreference preference = preferences.get(userId);
+		Instant now = clock.instant();
+		Instant windowStart = now.minus(RATE_WINDOW);
+		if (alerts.countSentOrPendingForRecipientSince(recipient.id(), windowStart) >= preference
+			.maxAlertsPerRecipientPerDay()) {
+			return new DeliveryAlert(null, NoAlertReason.RECIPIENT_RATE_LIMITED);
+		}
+		if (alerts.countSentOrPendingForUserSince(userId, windowStart) >= preference.maxAlertsPerDay()) {
+			return new DeliveryAlert(null, NoAlertReason.DAILY_RATE_LIMITED);
+		}
+		String message = preference.render(recipient.displayName(), Platform.WHATSAPP.displayName());
+		if (message.length() > MAX_MESSAGE_LENGTH) {
+			return new DeliveryAlert(null, NoAlertReason.MESSAGE_TOO_LONG);
+		}
+		UUID id = alerts.insert(new AlertRepository.NewAlert(userId, recipient.id(), clientRequestId,
+				TriggerSource.DELIVERY_TIMEOUT, Platform.WHATSAPP, AlertChannel.RELAY_SMS, AlertState.SCHEDULED,
+				message, now.plus(Duration.ofMinutes(delayMinutes)), now));
+		return new DeliveryAlert(id, null);
+	}
+
+	/** WhatsApp reported the message delivered or read: the SMS is no longer needed. */
+	@Transactional
+	public boolean cancelBecauseDelivered(UUID alertId) {
+		return alerts.cancelPending(alertId, "Delivered on WhatsApp");
+	}
+
+	/** The recipient wrote to the business number, so they are online and have seen it. */
+	@Transactional
+	public int cancelBecauseRecipientReplied(UUID recipientId) {
+		return alerts.cancelPendingDeliveryAlertsForRecipient(recipientId, "They replied on WhatsApp");
+	}
+
+	/** WhatsApp could not deliver the message at all: send the SMS now instead of waiting. */
+	@Transactional
+	public boolean sendNowBecauseWhatsAppFailed(UUID alertId) {
+		return alerts.makeDueNow(alertId, clock.instant(), "WhatsApp could not deliver the message");
+	}
+
 	public AlertView get(UUID userId, UUID id) {
 		return alerts.find(userId, id).orElseThrow(() -> ApiException.notFound("Alert"));
 	}

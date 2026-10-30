@@ -1,5 +1,8 @@
 package com.oma.account;
 
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,7 +24,7 @@ public class AccountRepository {
 			.update();
 	}
 
-	Optional<String> findDisplayName(UUID id) {
+	public Optional<String> findDisplayName(UUID id) {
 		return jdbc.sql("select display_name from app.user_account where id = :id")
 			.param("id", id)
 			.query(String.class)
@@ -36,6 +39,24 @@ public class AccountRepository {
 	}
 
 	/** Deletes the account; recipients, preferences and alerts cascade. */
+	public void markRelaySeen(UUID id, Instant at) {
+		jdbc.sql("update app.user_account set relay_last_seen_at = :at where id = :id")
+			.param("id", id)
+			.param("at", Timestamp.from(at))
+			.update();
+	}
+
+	public Optional<Instant> findRelayLastSeen(UUID id) {
+		return jdbc.sql("select relay_last_seen_at from app.user_account where id = :id")
+			.param("id", id)
+			.query(Timestamp.class)
+			.list()
+			.stream()
+			.filter(Objects::nonNull)
+			.findFirst()
+			.map(Timestamp::toInstant);
+	}
+
 	void delete(UUID id) {
 		jdbc.sql("delete from app.user_account where id = :id").param("id", id).update();
 	}

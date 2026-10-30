@@ -145,7 +145,7 @@ class _Details extends StatelessWidget {
           leading: CircleAvatar(child: Icon(alertIcon(alert.state))),
           title: Text(alert.recipientName ?? 'Removed recipient', style: theme.textTheme.titleLarge),
           subtitle: Text(alert.recipientPhone ?? ''),
-          trailing: AlertStateChip(state: alert.state),
+          trailing: AlertStateChip(state: alert.state, label: alert.stateLabel),
         ),
         const SizedBox(height: 8),
         Text(_explanation),

@@ -56,8 +56,8 @@ public class AlertScheduler {
 		if (recovered > 0) {
 			log.warn("{} alert(s) were interrupted while sending and are marked SMS_UNKNOWN", recovered);
 		}
-		alerts.promoteDueDeviceAlerts(now);
-		alerts.expireDeviceAlerts(now.minus(properties.alerts().deviceDueExpiry()));
+		alerts.promoteDueDeviceAndRelayAlerts(now);
+		alerts.expireDeviceAndRelayAlerts(now.minus(properties.alerts().deviceDueExpiry()));
 		dispatchServerAlerts(now);
 	}
 

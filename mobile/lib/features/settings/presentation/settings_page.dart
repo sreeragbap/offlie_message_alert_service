@@ -106,6 +106,12 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: () => context.push('/preferences'),
           ),
           ListTile(
+            leading: const Icon(Icons.cell_tower),
+            title: const Text('Relay phone'),
+            subtitle: const Text('Send automatic SMS alerts from this phone (Android)'),
+            onTap: () => context.push('/relay'),
+          ),
+          ListTile(
             leading: const Icon(Icons.help_outline),
             title: const Text('Help & limitations'),
             onTap: () => context.push('/help'),

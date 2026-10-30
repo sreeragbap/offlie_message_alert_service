@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/config/app_config.dart';
 import '../core/network/api_client.dart';
 import '../core/notifications/alert_reminders.dart';
+import '../core/sms/sms_relay_channel.dart';
 import '../features/alerts/data/alert_repository.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/session_cubit.dart';
@@ -11,7 +12,9 @@ import '../features/dashboard/data/dashboard.dart';
 import '../features/help/data/platform_info.dart';
 import '../features/preferences/data/alert_preferences.dart';
 import '../features/recipients/data/recipient_repository.dart';
+import '../features/relay/data/relay_repository.dart';
 import '../features/settings/data/account_repository.dart';
+import '../features/whatsapp/data/whatsapp_message.dart';
 
 Future<void> setupDependencies() async {
   final getIt = GetIt.I;
@@ -30,5 +33,8 @@ Future<void> setupDependencies() async {
     ..registerLazySingleton(() => AlertPreferencesRepository(api))
     ..registerLazySingleton(() => DashboardRepository(api))
     ..registerLazySingleton(() => PlatformRepository(api))
-    ..registerLazySingleton(() => AccountRepository(api));
+    ..registerLazySingleton(() => AccountRepository(api))
+    ..registerLazySingleton(() => WhatsAppRepository(api))
+    ..registerLazySingleton(() => RelayRepository(api))
+    ..registerLazySingleton(SmsRelayChannel.new);
 }

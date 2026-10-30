@@ -16,14 +16,17 @@ class PlatformAndDashboardApiTest extends IntegrationTest {
 
 	private final UUID alice = UUID.randomUUID();
 
-	/** Brief test 10: platforms without delivery events are reported as such, never as connected. */
+	/**
+	 * Brief test 10: platforms without delivery events are reported as such, never as connected. Only
+	 * WhatsApp (configured in the test profile) is connected.
+	 */
 	@Test
 	void platformsReportRealCapabilities() throws Exception {
 		mvc.perform(get("/api/v1/platforms").with(as(alice)))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[?(@.id == 'WHATSAPP')].automaticDetection").value("BUSINESS_ACCOUNTS_ONLY"))
 			.andExpect(jsonPath("$[?(@.id == 'TELEGRAM')].automaticDetection").value("NOT_AVAILABLE"))
-			.andExpect(jsonPath("$[?(@.automaticDetectionConnected == true)]").isEmpty());
+			.andExpect(jsonPath("$[?(@.automaticDetectionConnected == true)].id").value("WHATSAPP"));
 	}
 
 	@Test
@@ -31,8 +34,10 @@ class PlatformAndDashboardApiTest extends IntegrationTest {
 		mvc.perform(get("/api/v1/dashboard").with(as(alice)))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.serviceActive").value(false))
-			.andExpect(jsonPath("$.automaticMonitoringConnected").value(false))
-			.andExpect(jsonPath("$.setupIssues[0]").value("Add a recipient to start sending alerts."));
+			.andExpect(jsonPath("$.automaticMonitoringConnected").value(true))
+			.andExpect(jsonPath("$.relayOnline").value(false))
+			.andExpect(jsonPath("$.setupIssues[0]").value("Add a recipient to start sending alerts."))
+			.andExpect(jsonPath("$.setupIssues[1]").value(org.hamcrest.Matchers.startsWith("Your relay phone is offline")));
 
 		UUID anu = Api.createRecipient(mvc, alice, "Anu", "9876543210");
 		Api.createAlert(mvc, alice, anu, 30, null);

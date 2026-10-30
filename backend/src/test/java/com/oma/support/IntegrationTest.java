@@ -46,6 +46,9 @@ public abstract class IntegrationTest {
 	@Autowired
 	protected FakeSmsGateway sms;
 
+	@Autowired
+	protected FakeWhatsAppApi whatsApp;
+
 	@DynamicPropertySource
 	static void datasource(DynamicPropertyRegistry registry) {
 		registry.add("spring.datasource.url", () -> POSTGRES.getJdbcUrl("postgres", "postgres"));
@@ -55,9 +58,10 @@ public abstract class IntegrationTest {
 
 	@BeforeEach
 	void resetState() {
-		jdbc.sql("truncate app.alert, app.recipient, app.alert_preference, app.user_account cascade").update();
+		jdbc.sql("truncate app.wa_status_event, app.wa_message, app.alert, app.recipient, app.alert_preference, app.user_account cascade").update();
 		clock.reset();
 		sms.reset();
+		whatsApp.reset();
 	}
 
 	/** Authenticates the request as the given Supabase user. */
@@ -87,6 +91,12 @@ public abstract class IntegrationTest {
 		@Primary
 		FakeSmsGateway fakeSmsGateway() {
 			return new FakeSmsGateway();
+		}
+
+		@Bean
+		@Primary
+		FakeWhatsAppApi fakeWhatsAppApi() {
+			return new FakeWhatsAppApi();
 		}
 
 	}

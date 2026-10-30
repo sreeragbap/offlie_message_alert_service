@@ -140,20 +140,22 @@ public class AlertRepository {
 
 	// ---- Scheduler operations (all users) ----
 
-	int promoteDueDeviceAlerts(Instant now) {
+	int promoteDueDeviceAndRelayAlerts(Instant now) {
 		return jdbc.sql("""
 				update app.alert set state = 'DUE', updated_at = now()
-				where channel = 'DEVICE_SMS' and state = 'SCHEDULED' and due_at <= :now
+				where channel in ('DEVICE_SMS', 'RELAY_SMS') and state = 'SCHEDULED' and due_at <= :now
 				""")
 			.param("now", ts(now))
 			.update();
 	}
 
-	int expireDeviceAlerts(Instant dueBefore) {
+	int expireDeviceAndRelayAlerts(Instant dueBefore) {
 		return jdbc.sql("""
 				update app.alert
-				set state = 'EXPIRED', last_error = 'Not sent from the phone in time', completed_at = now(), updated_at = now()
-				where channel = 'DEVICE_SMS' and state = 'DUE' and due_at <= :dueBefore
+				set state = 'EXPIRED', last_error = case channel when 'RELAY_SMS' then 'The relay phone did not pick it up in time'
+				                                                 else 'Not sent from the phone in time' end,
+				    completed_at = now(), updated_at = now()
+				where channel in ('DEVICE_SMS', 'RELAY_SMS') and state = 'DUE' and due_at <= :dueBefore
 				""")
 			.param("dueBefore", ts(dueBefore))
 			.update();
@@ -192,6 +194,80 @@ public class AlertRepository {
 			.param("limit", limit)
 			.query(ALERT)
 			.list();
+	}
+
+	/** Claims the user's due relay alerts for their relay phone, like {@link #claimDueServerAlerts}. */
+	List<Alert> claimDueRelayAlerts(UUID userId, Instant lockedUntil, int limit) {
+		return jdbc.sql("""
+				update app.alert set state = 'SENDING', attempts = attempts + 1, locked_until = :lockedUntil,
+				                     updated_at = now()
+				where id in (
+				    select id from app.alert
+				    where user_id = :userId and channel = 'RELAY_SMS' and state = 'DUE'
+				    order by due_at
+				    limit :limit
+				    for update skip locked)
+				returning *
+				""")
+			.param("userId", userId)
+			.param("lockedUntil", ts(lockedUntil))
+			.param("limit", limit)
+			.query(ALERT)
+			.list();
+	}
+
+	Optional<Alert> findForUser(UUID userId, UUID id) {
+		return jdbc.sql("select * from app.alert where user_id = :userId and id = :id")
+			.param("userId", userId)
+			.param("id", id)
+			.query(ALERT)
+			.optional();
+	}
+
+	/** The relay phone reported a delivery report for an SMS it sent. */
+	boolean markDelivered(UUID userId, UUID id) {
+		return jdbc.sql("""
+				update app.alert set state = 'SMS_DELIVERED', updated_at = now()
+				where user_id = :userId and id = :id and state = 'SMS_ACCEPTED'
+				""")
+			.param("userId", userId)
+			.param("id", id)
+			.update() == 1;
+	}
+
+	/** Cancels a pending delivery-timeout alert, e.g. because WhatsApp reported delivery. */
+	boolean cancelPending(UUID id, String note) {
+		return jdbc.sql("""
+				update app.alert
+				set state = 'CANCELLED', last_error = :note, completed_at = now(), updated_at = now()
+				where id = :id and state in ('SCHEDULED', 'DUE')
+				""")
+			.param("id", id)
+			.param("note", note)
+			.update() == 1;
+	}
+
+	int cancelPendingDeliveryAlertsForRecipient(UUID recipientId, String note) {
+		return jdbc.sql("""
+				update app.alert
+				set state = 'CANCELLED', last_error = :note, completed_at = now(), updated_at = now()
+				where recipient_id = :recipientId and trigger_source = 'DELIVERY_TIMEOUT' and state in ('SCHEDULED', 'DUE')
+				""")
+			.param("recipientId", recipientId)
+			.param("note", note)
+			.update();
+	}
+
+	/** Brings a scheduled alert forward, e.g. because WhatsApp reported the message failed. */
+	boolean makeDueNow(UUID id, Instant now, String note) {
+		return jdbc.sql("""
+				update app.alert set due_at = :now, last_error = :note, updated_at = now()
+				where id = :id and state = 'SCHEDULED' and due_at > :now
+				""")
+			.param("id", id)
+			.param("now", ts(now))
+			.param("note", note)
+			.update() == 1;
 	}
 
 	void markAccepted(UUID id, String provider, String providerMessageId) {

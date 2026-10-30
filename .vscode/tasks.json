@@ -20,6 +20,24 @@
         "cwd": "${workspaceFolder}/mobile"
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Tunnel (cloudflared)",
+      "detail": "Public https address for the backend on :8080 (WhatsApp webhook); prints a new trycloudflare.com URL each start",
+      "type": "shell",
+      "command": "cloudflared tunnel --no-autoupdate --url http://localhost:8080",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Build release APK (tunnel)",
+      "detail": "Release APK using env.tunnel.json (API_BASE_URL = tunnel https address); works on any network",
+      "type": "shell",
+      "command": "flutter build apk --release --dart-define-from-file=env.tunnel.json",
+      "options": {
+        "cwd": "${workspaceFolder}/mobile"
+      },
+      "problemMatcher": []
     }
   ]
 }
