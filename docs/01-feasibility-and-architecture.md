@@ -325,17 +325,20 @@ offline-message-alert-service/
 │       └── sms/                     # SmsGateway interface + twilio/, msg91/, fake/ adapters
 ├── mobile/                          # Flutter
 │   └── lib/
-│       ├── core/                    # di (get_it), dio client + auth interceptor, theme, router (go_router)
+│       ├── app/                     # bootstrap, root widget, build-time config
+│       ├── core/                    # di (get_it + injectable), dio client, router (go_router), notifications, sms
 │       └── features/
-│           ├── auth/        {data, domain, presentation(cubit, pages)}
-│           ├── onboarding/
+│           ├── alerts/      {domain(models, repository, services), logic(cubits), screens, widgets}
+│           ├── auth/
 │           ├── dashboard/
+│           ├── help/
+│           ├── main/                # bottom-navigation shell
+│           ├── onboarding/
+│           ├── preferences/
 │           ├── recipients/
-│           ├── integrations/
-│           ├── alert_rules/
-│           ├── alert_history/
+│           ├── relay/
 │           ├── settings/
-│           └── help/
+│           └── whatsapp/
 ├── docs/
 └── README.md
 ```

@@ -1,15 +1,26 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:injectable/injectable.dart';
+import 'package:offline_alert/features/alerts/domain/models/alert.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
-import '../../features/alerts/data/alert.dart';
-
 /// Local reminders that tell the user a scheduled alert is ready to send from
 /// their phone. The backend stays the source of truth; [sync] reconciles.
+@lazySingleton
 class AlertReminders {
   AlertReminders({FlutterLocalNotificationsPlugin? plugin})
       : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+
+  /// Resolved during `configureDependencies()` so a reminder tapped while the
+  /// app was closed is already captured when the first frame asks for it.
+  @preResolve
+  @factoryMethod
+  static Future<AlertReminders> create() async {
+    final reminders = AlertReminders();
+    await reminders.init();
+    return reminders;
+  }
 
   final FlutterLocalNotificationsPlugin _plugin;
 

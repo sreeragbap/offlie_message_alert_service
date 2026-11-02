@@ -1,12 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:offline_alert/core/bloc/resource.dart';
 import 'package:offline_alert/core/network/api_exception.dart';
-import 'package:offline_alert/core/state/resource.dart';
-import 'package:offline_alert/features/preferences/data/alert_preferences.dart';
-import 'package:offline_alert/features/recipients/data/recipient_repository.dart';
-import 'package:offline_alert/features/whatsapp/data/whatsapp_message.dart';
-import 'package:offline_alert/features/whatsapp/presentation/whatsapp_compose_cubit.dart';
-import 'package:offline_alert/features/whatsapp/presentation/whatsapp_message_tile.dart';
+import 'package:offline_alert/features/preferences/domain/models/alert_preferences.dart';
+import 'package:offline_alert/features/preferences/domain/repository/alert_preferences_repository.dart';
+import 'package:offline_alert/features/recipients/domain/repository/recipient_repository.dart';
+import 'package:offline_alert/features/whatsapp/domain/models/whatsapp_message.dart';
+import 'package:offline_alert/features/whatsapp/domain/repository/whatsapp_repository.dart';
+import 'package:offline_alert/features/whatsapp/logic/whatsapp_compose_cubit/whatsapp_compose_cubit.dart';
+import 'package:offline_alert/features/whatsapp/widgets/whatsapp_message_tile.dart';
 
 import '../../fixtures.dart';
 

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
-import '../network/api_exception.dart';
-import '../state/resource.dart';
+import 'package:offline_alert/core/bloc/resource.dart';
+import 'package:offline_alert/core/network/api_exception.dart';
 
 /// Renders a [Resource] with consistent loading, error and empty states.
 class ResourceView<T> extends StatelessWidget {

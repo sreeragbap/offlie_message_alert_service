@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:injectable/injectable.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Opens the phone's own messaging app with the number and text filled in.
 /// The user reviews and taps Send; this app never sends SMS by itself.
+@lazySingleton
 class SmsComposer {
   const SmsComposer();
 

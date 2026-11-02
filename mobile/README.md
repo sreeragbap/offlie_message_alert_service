@@ -1,17 +1,47 @@
 # offline_alert
 
-Offline Message Alert
+Flutter client for Offline Message Alert. Setup and running: see
+[docs/03-setup-guide.md](../docs/03-setup-guide.md).
 
-## Getting Started
+## Layout
 
-This project is a starting point for a Flutter application.
+```
+lib/
+├── main.dart                 # calls bootstrap()
+├── app/                      # bootstrap, root widget, build-time config
+├── core/
+│   ├── di/                   # injection.dart + generated injection.config.dart
+│   ├── bloc/                 # Resource / ActionStatus
+│   ├── network/              # ApiClient, ApiException
+│   ├── router/               # AppRouter (go_router)
+│   └── ...                   # notifications, sms, device, widgets
+└── features/<feature>/
+    ├── domain/
+    │   ├── models/
+    │   ├── repository/       # abstract contracts (XRepository)
+    │   └── services/         # implementations (XService)
+    ├── logic/<name>_cubit/   # <name>_cubit.dart + part '<name>_state.dart'
+    ├── screens/
+    ├── widgets/
+    └── index.dart            # barrel; each folder has one
+```
 
-A few resources to get you started if this is your first Flutter project:
+## Dependency injection
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+get_it + injectable. Annotate, then regenerate the config:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```sh
+dart run build_runner build
+```
+
+- Services: `@LazySingleton(as: XRepository) class XService implements XRepository`.
+  Code depends on the contract, so tests mock `XRepository`.
+- Cubits: `@injectable` (a new instance per screen). Runtime arguments are
+  `@factoryParam`, e.g. `getIt<AlertDetailCubit>(param1: alertId)`.
+- Objects the graph does not build (the Supabase auth client) are declared in
+  `core/di/register_module.dart`.
+- Async setup that must finish before `runApp` uses `@preResolve` with a
+  `@factoryMethod` (see `AlertReminders.create`).
+
+`injection.config.dart` is committed; regenerate it whenever an annotation or
+constructor changes.

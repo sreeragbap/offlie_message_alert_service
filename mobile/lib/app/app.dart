@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
-
-import '../core/notifications/alert_reminders.dart';
-import '../features/auth/presentation/session_cubit.dart';
-import 'router.dart';
+import 'package:offline_alert/core/di/injection.dart';
+import 'package:offline_alert/core/notifications/alert_reminders.dart';
+import 'package:offline_alert/core/router/app_router.dart';
+import 'package:offline_alert/features/auth/logic/session_cubit/session_cubit.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -15,9 +14,9 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  final _session = GetIt.I<SessionCubit>();
-  final _reminders = GetIt.I<AlertReminders>();
-  late final GoRouter _router = createRouter(_session);
+  final _session = getIt<SessionCubit>();
+  final _reminders = getIt<AlertReminders>();
+  final GoRouter _router = getIt<AppRouter>().config;
 
   @override
   void initState() {
@@ -37,7 +36,6 @@ class _AppState extends State<App> {
   @override
   void dispose() {
     _reminders.tappedAlertId.removeListener(_openTappedAlert);
-    _router.dispose();
     super.dispose();
   }
 

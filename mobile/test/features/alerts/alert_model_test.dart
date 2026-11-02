@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:offline_alert/features/alerts/data/alert.dart';
+import 'package:offline_alert/features/alerts/domain/models/alert.dart';
 
 import '../../fixtures.dart';
 

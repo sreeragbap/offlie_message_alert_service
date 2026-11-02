@@ -1,12 +1,20 @@
 import 'package:dio/dio.dart';
-
-import 'api_exception.dart';
+import 'package:injectable/injectable.dart';
+import 'package:offline_alert/app/app_config.dart';
+import 'package:offline_alert/core/network/api_exception.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show GoTrueClient;
 
 typedef AccessTokenProvider = String? Function();
 
 /// The only place that talks HTTP. Adds the Supabase access token and turns
 /// failures into [ApiException]s.
+@lazySingleton
 class ApiClient {
+  /// The token is read per request, so a refreshed session is picked up.
+  @factoryMethod
+  ApiClient.create(GoTrueClient auth)
+      : this(baseUrl: AppConfig.apiBaseUrl, accessToken: () => auth.currentSession?.accessToken);
+
   ApiClient({required String baseUrl, required AccessTokenProvider accessToken, Dio? dio})
       : _dio = dio ??
             Dio(BaseOptions(

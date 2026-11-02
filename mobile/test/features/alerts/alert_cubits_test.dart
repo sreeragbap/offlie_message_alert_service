@@ -1,17 +1,18 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:offline_alert/core/bloc/resource.dart';
 import 'package:offline_alert/core/network/api_exception.dart';
 import 'package:offline_alert/core/notifications/alert_reminders.dart';
 import 'package:offline_alert/core/sms/sms_composer.dart';
-import 'package:offline_alert/core/state/resource.dart';
-import 'package:offline_alert/features/alerts/data/alert.dart';
-import 'package:offline_alert/features/alerts/data/alert_repository.dart';
-import 'package:offline_alert/features/alerts/presentation/alert_detail_cubit.dart';
-import 'package:offline_alert/features/alerts/presentation/alert_history_cubit.dart';
-import 'package:offline_alert/features/alerts/presentation/new_alert_cubit.dart';
-import 'package:offline_alert/features/preferences/data/alert_preferences.dart';
-import 'package:offline_alert/features/recipients/data/recipient_repository.dart';
+import 'package:offline_alert/features/alerts/domain/models/alert.dart';
+import 'package:offline_alert/features/alerts/domain/repository/alert_repository.dart';
+import 'package:offline_alert/features/alerts/logic/alert_detail_cubit/alert_detail_cubit.dart';
+import 'package:offline_alert/features/alerts/logic/alert_history_cubit/alert_history_cubit.dart';
+import 'package:offline_alert/features/alerts/logic/new_alert_cubit/new_alert_cubit.dart';
+import 'package:offline_alert/features/preferences/domain/models/alert_preferences.dart';
+import 'package:offline_alert/features/preferences/domain/repository/alert_preferences_repository.dart';
+import 'package:offline_alert/features/recipients/domain/repository/recipient_repository.dart';
 
 import '../../fixtures.dart';
 

@@ -5,18 +5,21 @@
       "name": "Mobile: phone (USB)",
       "type": "dart",
       "request": "launch",
-      "cwd": "mobile",
-      "program": "lib/main.dart",
-      "toolArgs": ["--dart-define-from-file=env.device.json"],
-      "preLaunchTask": "adb reverse 8080"
+      "cwd": "${workspaceFolder}/mobile",
+      "program": "${workspaceFolder}/mobile/lib/main.dart",
+      "toolArgs": ["--dart-define-from-file=${workspaceFolder}/mobile/env.device.json"],
+      "preLaunchTask": "adb reverse 8080",
+      // Also used for the Run/Debug links above main() in mobile/, which
+      // otherwise launch without the env file and show "App is not configured".
+      "templateFor": ["${workspaceFolder}/mobile"]
     },
     {
       "name": "Mobile: Android emulator",
       "type": "dart",
       "request": "launch",
-      "cwd": "mobile",
-      "program": "lib/main.dart",
-      "toolArgs": ["--dart-define-from-file=env.json"]
+      "cwd": "${workspaceFolder}/mobile",
+      "program": "${workspaceFolder}/mobile/lib/main.dart",
+      "toolArgs": ["--dart-define-from-file=${workspaceFolder}/mobile/env.json"]
     }
   ]
 }

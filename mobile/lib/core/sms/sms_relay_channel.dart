@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:injectable/injectable.dart';
 
 /// What Android reported for an SMS sent in relay mode. The names match the backend's relay API.
 enum RelaySendOutcome {
@@ -24,6 +25,7 @@ class RelaySendResult {
 
 /// Sends an SMS from this phone's SIM without opening the messaging app (Android only,
 /// needs the SEND_SMS permission). Implemented in android/.../SmsRelay.kt.
+@lazySingleton
 class SmsRelayChannel {
   static const _channel = MethodChannel('oma/sms_relay');
 
