@@ -71,13 +71,18 @@ WHATSAPP_TEMPLATE_PARAMS=sender,text
 
 Use an Android phone with an **active SIM** that can send SMS. It can be your own phone or a spare one.
 
-1. Install the app and sign in with **the same account** you send WhatsApp messages from. To make the app reach the backend from any network, build it against the tunnel address. Make `mobile/env.tunnel.json` (git-ignored) with `"API_BASE_URL": "https://<random-words>.trycloudflare.com"`, then run:
+1. Build the **relay** version of the app against the tunnel address, so it reaches the backend from any network. Make `mobile/env.tunnel.json` (git-ignored) with `"API_BASE_URL": "https://<random-words>.trycloudflare.com"`, then run:
    ```bash
-   flutter build apk --release --dart-define-from-file=env.tunnel.json
+   flutter build apk --release --flavor relay --dart-define-from-file=env.tunnel.json
    ```
-   In VS Code, the task **Build release APK (tunnel)** does the same. Rebuild when the tunnel address changes.
-2. Open **Settings → Relay phone → Start relay** and allow the SMS permission.
-3. Keep that screen open, the phone charging and online. The screen stays on by itself.
+   In VS Code, the task **Build relay APK (tunnel)** does the same. Rebuild when the tunnel address changes. Phones that only send WhatsApp messages use the standard build (**Build release APK (tunnel)**), which installs normally.
+2. Install it **over USB**. Google Play Protect blocks installing an app that asks for SMS permission from a browser, file manager or chat app. Turn on **Developer options → USB debugging** on the phone, connect it to the Mac, and run (or the VS Code task **Install relay APK (USB)**):
+   ```bash
+   adb install -r build/app/outputs/flutter-apk/app-relay-release.apk
+   ```
+   Sign in with **the same account** you send WhatsApp messages from.
+3. Open **Settings → Relay phone → Start relay** and allow the SMS permission.
+4. Keep that screen open, the phone charging and online. The screen stays on by itself.
 
 The Home screen shows "Your relay phone is offline" when it has not checked in for 2 minutes. An alert that waits more than 24 hours for the relay phone expires instead of being sent late.
 

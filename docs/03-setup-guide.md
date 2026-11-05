@@ -104,7 +104,9 @@ Every build command needs a config file, otherwise the app opens on "App is not 
    flutter build apk --release --dart-define-from-file=env.lan.json
    ```
 
-4. Copy `mobile/build/app/outputs/flutter-apk/app-release.apk` to the phone (USB file transfer, Google Drive, etc.) and open it to install. Allow "install unknown apps" when asked.
+4. Copy `mobile/build/app/outputs/flutter-apk/app-standard-release.apk` to the phone (USB file transfer, Google Drive, etc.) and open it to install. Allow "install unknown apps" when asked.
+
+This standard build has no SMS permission. The relay build, which sends SMS by itself, is installed over USB instead; see [04-whatsapp-setup.md](04-whatsapp-setup.md#4-relay-phone).
 
 The phone must be on the same Wi-Fi as the Mac, and the backend must be running. If the Mac's IP changes, rebuild with the new IP.
 

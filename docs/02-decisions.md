@@ -63,7 +63,8 @@ The owner asked whether alerts can be sent through the phone's own SIM instead o
   - "No service" and "radio off" are retried with backoff.
   - Alerts waiting more than 24 h expire.
 - **Limits:**
-  - Needs `SEND_SMS`, which Google Play allows only for default SMS apps. The APK is installed directly; a Play Store build must drop relay mode.
+  - Needs `SEND_SMS`, which Google Play allows only for default SMS apps. Only the `relay` Android flavor declares it; the `standard` flavor (default) does not and is the one for the Play Store.
+  - Play Protect (India) blocks sideloading apps that ask for SMS permissions, so the relay APK is installed over USB with `adb install`.
   - iOS cannot send SMS from apps.
   - Personal, low-volume use only; automated bulk SMS from a personal SIM breaks TRAI rules (D3).
   - The phone must stay on, online and on the relay screen.
