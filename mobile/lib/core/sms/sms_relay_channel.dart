@@ -14,7 +14,8 @@ enum RelaySendOutcome {
   const RelaySendOutcome(this.wire);
   final String wire;
 
-  static RelaySendOutcome parse(String? value) => values.firstWhere((o) => o.wire == value, orElse: () => unknown);
+  static RelaySendOutcome parse(String? value) =>
+      values.firstWhere((o) => o.wire == value, orElse: () => unknown);
 }
 
 class RelaySendResult {
@@ -23,13 +24,16 @@ class RelaySendResult {
   final String? error;
 }
 
-/// Sends an SMS from this phone's SIM without opening the messaging app (Android only,
+/// Sends an SMS from this phone's SIM without opening the messaging app (Android relay build only,
 /// needs the SEND_SMS permission). Implemented in android/.../SmsRelay.kt.
 @lazySingleton
 class SmsRelayChannel {
   static const _channel = MethodChannel('oma/sms_relay');
 
-  bool get supported => !kIsWeb && Platform.isAndroid;
+  bool get isAndroid => !kIsWeb && Platform.isAndroid;
+
+  /// Only the relay build (`--flavor relay`) declares SEND_SMS.
+  bool get supported => isAndroid && appFlavor == 'relay';
 
   /// Asks for SEND_SMS if needed; true when granted.
   Future<bool> requestPermission() async {
@@ -40,14 +44,21 @@ class SmsRelayChannel {
     }
   }
 
-  Future<RelaySendResult> send({required String to, required String text, required String reference}) async {
+  Future<RelaySendResult> send({
+    required String to,
+    required String text,
+    required String reference,
+  }) async {
     try {
       final result = await _channel.invokeMapMethod<String, dynamic>('send', {
         'to': to,
         'text': text,
         'reference': reference,
       });
-      return RelaySendResult(RelaySendOutcome.parse(result?['outcome'] as String?), result?['error'] as String?);
+      return RelaySendResult(
+        RelaySendOutcome.parse(result?['outcome'] as String?),
+        result?['error'] as String?,
+      );
     } on PlatformException catch (e) {
       // We cannot tell how far it got; never let the backend retry it.
       return RelaySendResult(RelaySendOutcome.unknown, e.message);

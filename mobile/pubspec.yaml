@@ -67,6 +67,8 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  # Android builds: standard (no SMS permission) or relay (--flavor relay). See android/app/build.gradle.kts.
+  default-flavor: standard
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

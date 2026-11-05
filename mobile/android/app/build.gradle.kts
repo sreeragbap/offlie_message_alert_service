@@ -58,6 +58,15 @@ android {
         versionName = flutter.versionName
     }
 
+    // Two builds that replace each other on a phone (same application ID):
+    //  - standard: no SMS permission; installs normally (Play Protect blocks sideloaded apps asking for SMS).
+    //  - relay: adds SEND_SMS (src/relay/AndroidManifest.xml) for the relay phone; install it over USB (adb).
+    flavorDimensions += "sms"
+    productFlavors {
+        create("standard") { dimension = "sms" }
+        create("relay") { dimension = "sms" }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.

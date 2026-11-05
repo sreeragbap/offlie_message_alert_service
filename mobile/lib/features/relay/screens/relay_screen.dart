@@ -14,9 +14,15 @@ class RelayScreen extends StatelessWidget {
     if (!sms.supported) {
       return Scaffold(
         appBar: AppBar(title: const Text('Relay phone')),
-        body: const Padding(
-          padding: EdgeInsets.all(24),
-          child: Text('Relay mode needs an Android phone with a SIM. iPhones do not let apps send SMS.'),
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            sms.isAndroid
+                ? 'This version of the app cannot send SMS. On the relay phone, install the relay version '
+                      'from a computer over USB (see the setup guide). Google Play Protect blocks installing it '
+                      'any other way.'
+                : 'Relay mode needs an Android phone with a SIM. iPhones do not let apps send SMS.',
+          ),
         ),
       );
     }

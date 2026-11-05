@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Relay build only: the relay phone sends automatic alerts from its SIM. Requested at runtime when
+         relay mode is switched on. Play Protect blocks sideloaded installs that ask for it, so this build is
+         installed over USB (adb), and Google Play allows it only for default SMS apps (docs/02-decisions.md, D10). -->
+    <uses-permission android:name="android.permission.SEND_SMS"/>
+</manifest>

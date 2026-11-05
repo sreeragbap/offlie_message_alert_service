@@ -31,9 +31,29 @@
     },
     {
       "label": "Build release APK (tunnel)",
-      "detail": "Release APK using env.tunnel.json (API_BASE_URL = tunnel https address); works on any network",
+      "detail": "Standard release APK (no SMS permission) using env.tunnel.json (API_BASE_URL = tunnel https address); works on any network",
       "type": "shell",
       "command": "flutter build apk --release --dart-define-from-file=env.tunnel.json",
+      "options": {
+        "cwd": "${workspaceFolder}/mobile"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build relay APK (tunnel)",
+      "detail": "Relay release APK (sends SMS from the SIM) using env.tunnel.json; install it with 'Install relay APK (USB)'",
+      "type": "shell",
+      "command": "flutter build apk --release --flavor relay --dart-define-from-file=env.tunnel.json",
+      "options": {
+        "cwd": "${workspaceFolder}/mobile"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Install relay APK (USB)",
+      "detail": "Installs the relay APK on the USB-connected phone; Play Protect blocks installing it from the phone itself",
+      "type": "shell",
+      "command": "${env:HOME}/Library/Android/sdk/platform-tools/adb install -r build/app/outputs/flutter-apk/app-relay-release.apk",
       "options": {
         "cwd": "${workspaceFolder}/mobile"
       },
