@@ -77,6 +77,16 @@ public class WhatsAppService {
 	}
 
 	public record Sent(WhatsAppMessage message, boolean replayed) {
+
+		public UUID messageId() {
+			return message.id();
+		}
+
+		/** Why WhatsApp did not take the message; null when it did. */
+		public String error() {
+			return message.errorMessage();
+		}
+
 	}
 
 	private record Prepared(UUID messageId, boolean replayed, Recipient recipient, Kind kind) {
