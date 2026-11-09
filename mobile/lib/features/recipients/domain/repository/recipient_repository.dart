@@ -1,3 +1,4 @@
+import 'package:offline_alert/features/recipients/domain/models/auto_message.dart';
 import 'package:offline_alert/features/recipients/domain/models/recipient.dart';
 
 /// Contract `RecipientService` is registered under, so tests can fake it.
@@ -12,4 +13,9 @@ abstract class RecipientRepository {
   Future<Recipient> update(String id, {String? displayName, String? phone, bool? alertsEnabled, bool? optedOut});
 
   Future<void> delete(String id);
+
+  /// The automatic WhatsApp message for this recipient; `enabled: false` when none is set up.
+  Future<AutoMessage> getAutoMessage(String recipientId);
+
+  Future<AutoMessage> saveAutoMessage(String recipientId, AutoMessage settings);
 }

@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:offline_alert/core/bloc/resource.dart';
 import 'package:offline_alert/core/di/injection.dart';
 import 'package:offline_alert/core/widgets/state_views.dart';
+import 'package:offline_alert/features/recipients/domain/models/auto_message.dart';
 import 'package:offline_alert/features/recipients/domain/models/recipient.dart';
 import 'package:offline_alert/features/recipients/domain/repository/recipient_repository.dart';
 import 'package:offline_alert/features/recipients/logic/recipient_form_cubit/recipient_form_cubit.dart';
+import 'package:offline_alert/features/recipients/widgets/auto_message_section.dart';
 
 class RecipientFormScreen extends StatelessWidget {
   const RecipientFormScreen({super.key, this.existing});
@@ -16,7 +18,7 @@ class RecipientFormScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<RecipientFormCubit>(param1: existing),
+      create: (_) => getIt<RecipientFormCubit>(param1: existing)..loadAutoMessage(),
       child: _RecipientForm(existing: existing),
     );
   }
@@ -36,11 +38,20 @@ class _RecipientFormState extends State<_RecipientForm> {
   late final _name = TextEditingController(text: widget.existing?.displayName);
   late final _phone = TextEditingController(text: widget.existing?.phoneE164);
   late bool _optedOut = widget.existing?.optedOut ?? false;
+  final _autoText = TextEditingController();
+  /// A new recipient gets the automatic message switched on ("Once", default text), so adding the
+  /// recipient is all it takes: the WhatsApp message goes a minute later, and the SMS if it is
+  /// not delivered.
+  late AutoMessage _auto = AutoMessage(enabled: widget.existing == null);
+
+  /// Once the user edits the automatic message, a late load no longer overwrites it.
+  bool _autoTouched = false;
 
   @override
   void dispose() {
     _name.dispose();
     _phone.dispose();
+    _autoText.dispose();
     super.dispose();
   }
 
@@ -77,7 +88,12 @@ class _RecipientFormState extends State<_RecipientForm> {
       ),
       body: BlocConsumer<RecipientFormCubit, RecipientFormState>(
         listener: (context, state) {
-          if (state.status == ActionStatus.done) context.pop(state.saved);
+          if (state.status == ActionStatus.done) {
+            context.pop(state.saved);
+          } else if (isEdit && !_autoTouched && state.autoMessage != _auto) {
+            setState(() => _auto = state.autoMessage);
+            _autoText.text = state.autoMessage.text ?? '';
+          }
         },
         builder: (context, state) {
           final working = state.status == ActionStatus.working;
@@ -113,7 +129,19 @@ class _RecipientFormState extends State<_RecipientForm> {
                     onChanged: (v) => setState(() => _optedOut = v),
                   ),
                 ],
-                const SizedBox(height: 8),
+                const Divider(height: 32),
+                AutoMessageSection(
+                  value: _auto,
+                  saved: state.autoMessage,
+                  textController: _autoText,
+                  loading: state.autoLoading,
+                  loadError: state.autoLoadError,
+                  onChanged: (v) => setState(() {
+                    _auto = v;
+                    _autoTouched = true;
+                  }),
+                ),
+                const SizedBox(height: 16),
                 Text(
                   'Only add people who are happy to get an SMS from you.',
                   style: Theme.of(context).textTheme.bodySmall,
@@ -128,9 +156,13 @@ class _RecipientFormState extends State<_RecipientForm> {
                       ? null
                       : () {
                           if (_formKey.currentState!.validate()) {
-                            context
-                                .read<RecipientFormCubit>()
-                                .save(displayName: _name.text, phone: _phone.text, optedOut: _optedOut);
+                            final text = _autoText.text.trim();
+                            context.read<RecipientFormCubit>().save(
+                                  displayName: _name.text,
+                                  phone: _phone.text,
+                                  optedOut: _optedOut,
+                                  autoMessage: _auto.copyWith(text: () => text.isEmpty ? null : text),
+                                );
                           }
                         },
                   child: Text(working ? 'Saving…' : 'Save'),

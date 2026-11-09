@@ -1,5 +1,6 @@
 import 'package:injectable/injectable.dart';
 import 'package:offline_alert/core/network/api_client.dart';
+import 'package:offline_alert/features/recipients/domain/models/auto_message.dart';
 import 'package:offline_alert/features/recipients/domain/models/recipient.dart';
 import 'package:offline_alert/features/recipients/domain/repository/recipient_repository.dart';
 
@@ -38,4 +39,12 @@ class RecipientService implements RecipientRepository {
 
   @override
   Future<void> delete(String id) => _api.delete('/recipients/$id');
+
+  @override
+  Future<AutoMessage> getAutoMessage(String recipientId) async =>
+      AutoMessage.fromJson(await _api.get('/recipients/$recipientId/auto-message') as Map<String, dynamic>);
+
+  @override
+  Future<AutoMessage> saveAutoMessage(String recipientId, AutoMessage settings) async => AutoMessage.fromJson(
+      await _api.put('/recipients/$recipientId/auto-message', settings.toJson()) as Map<String, dynamic>);
 }
