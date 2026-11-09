@@ -53,9 +53,34 @@ void main() {
     test('never shows raw server errors', () {
       final e = ApiException.fromDio(DioException(
         requestOptions: request,
-        response: Response(requestOptions: request, statusCode: 502, data: '<html>Bad gateway</html>'),
+        response: Response(requestOptions: request, statusCode: 500, data: '<html>Internal error</html>'),
       ));
       expect(e.message, 'Something went wrong. Please try again.');
+    });
+
+    test('a bad gateway means the server is not running', () {
+      final e = ApiException.fromDio(DioException(
+        requestOptions: request,
+        response: Response(requestOptions: request, statusCode: 502, data: '<html>Bad gateway</html>'),
+      ));
+      expect(e.code, 'SERVER_UNAVAILABLE');
+      expect(e.statusCode, 502);
+    });
+
+    test("the tunnel's offline page means the server is not running, not a missing page", () {
+      final e = ApiException.fromDio(DioException(
+        requestOptions: request,
+        response: Response(
+          requestOptions: request,
+          statusCode: 404,
+          data: '<!DOCTYPE html><html>endpoint offline</html>',
+          headers: Headers.fromMap({
+            'ngrok-error-code': ['ERR_NGROK_3200'],
+          }),
+        ),
+      ));
+      expect(e.code, 'SERVER_UNAVAILABLE');
+      expect(e.message, "Can't reach the server right now. Please try again in a minute.");
     });
   });
 }
