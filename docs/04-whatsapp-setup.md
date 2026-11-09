@@ -96,6 +96,16 @@ SMS from the relay phone are normal person-to-person SMS from its number. They a
    - leave the recipient's phone **online**: the ticks go to delivered, and the alert says "SMS alert not needed: Delivered on WhatsApp"; or
    - first turn **mobile data and Wi-Fi off** on the recipient's phone, keeping the phone on. WhatsApp cannot deliver, so after 5 minutes the relay phone sends the SMS and it arrives right away. In airplane mode the SMS would also wait until the phone is back on the network.
 
+## 6. Automatic messages (nothing to send by hand)
+
+**Adding a recipient is enough.** A new recipient has **Automatic WhatsApp message** switched on, set to **Once** with the default text, so it goes 1 minute after you tap **Save**. Turn it off before saving if you don't want that. To change it later, open the recipient in **Recipients**:
+- **Once:** goes 1 minute after you tap **Save**.
+- **On a schedule:** pick a time (India time) and days. It goes every selected day at that time.
+- **Message:** leave empty for "Hi {name}, this is an automatic message from {sender}.", or write your own with `{name}` and `{sender}`.
+- **Send SMS if not delivered within:** 1 minute by default.
+
+The backend sends it from the business number, and the relay phone sends the SMS if WhatsApp has not delivered it in time. Messages typed in the WhatsApp Business phone app are not tracked: WhatsApp gives no delivery status for them, so only messages the system sends get the SMS alert. The recipient screen shows the next send, the last send and any error. Keep the backend running: a scheduled send missed by more than 30 minutes is skipped.
+
 ## Costs (India, approximate, check Meta's rate card)
 
 - Template messages (utility): about ₹0.12 each. Free text within 24 hours of their reply: free.

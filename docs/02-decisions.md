@@ -77,3 +77,17 @@ The owner asked whether alerts can be sent through the phone's own SIM instead o
   - Everything works only while the Mac is on.
 - **Safety:** API docs are disabled in `.env`. `/api/**` needs a Supabase token, `/webhooks/whatsapp` needs Meta's signature, and only `/actuator/health` is open.
 - **Next:** host the backend in Mumbai/Singapore with a fixed HTTPS address before relying on it.
+
+## D12 — Automatic WhatsApp message per recipient (no manual sending)
+- **Decided:** 2026-11-05. The owner wants nothing sent by hand: set up a message once per recipient and let the system send it, with the SMS alert when WhatsApp does not deliver it.
+- **How:** each recipient can have one automatic message (`app.auto_message`), sent by the backend through the same path as the WhatsApp tab (D9), so the delivery-timeout SMS (D10) follows.
+  - No schedule: sent once, 1 minute after saving.
+  - Schedule: every selected weekday at a set time, India time (`Asia/Kolkata`).
+  - Text is optional, with `{name}` and `{sender}`; the default is "Hi {name}, this is an automatic message from {sender}."
+  - SMS alert after 1 minute by default (1–1440).
+  - On by default for a new recipient (2026-11-06): adding the recipient is all it takes, the "Once" message with the default text goes a minute later. Messages typed in the WhatsApp Business phone app cannot be tracked (Meta gives no delivery status for them, even with Coexistence), so the system has to send the WhatsApp message itself.
+- **Rules that follow:**
+  - A run is moved past and committed before sending, and each run has a fixed request id, so a crash or a second instance can skip a run but never sends it twice.
+  - A repeating run more than 30 minutes late (backend was off) is skipped, not sent late.
+  - Not sent to recipients who opted out. The usual SMS limits apply (3 per recipient per rolling 24 h).
+  - Outside WhatsApp's 24 h window the approved template is sent (D9), so with the test number the recipient sees `hello_world`, not the text.
