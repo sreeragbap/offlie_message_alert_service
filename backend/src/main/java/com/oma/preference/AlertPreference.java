@@ -21,10 +21,15 @@ public record AlertPreference(int defaultDelayMinutes, int maxAlertsPerRecipient
 	private static final Pattern PLACEHOLDER = Pattern.compile("\\{([a-zA-Z]+)}");
 
 	public String render(String recipientName, String platformName) {
-		return messageTemplate.replace("{name}", recipientName).replace("{platform}", platformName);
+		return render(messageTemplate, recipientName, platformName);
 	}
 
-	static void validateTemplate(String template) {
+	/** Fills in {@code {name}} and {@code {platform}}; also used for an SMS text written for one message. */
+	public static String render(String template, String recipientName, String platformName) {
+		return template.replace("{name}", recipientName).replace("{platform}", platformName);
+	}
+
+	public static void validateTemplate(String template) {
 		Matcher matcher = PLACEHOLDER.matcher(template);
 		while (matcher.find()) {
 			String key = matcher.group(1);

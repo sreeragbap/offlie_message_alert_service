@@ -91,7 +91,9 @@ SMS from the relay phone are normal person-to-person SMS from its number. They a
 ## 5. Try it
 
 1. In the app's **Recipients**, add a test number you allowed in step 1.2.
-2. In **WhatsApp → New message**, send something with **SMS alert after 5 min**.
+2. In **WhatsApp → New message**, pick the recipient and send with **SMS alert after 5 min**. Both texts start with a default you can edit for this message, and the grey boxes show them as the recipient will get them:
+   - **WhatsApp message:** "Hi {name}, this is a message from {sender}." (`{name}` = their name, `{sender}` = your name).
+   - **SMS if not delivered:** your default from **Settings → Alert preferences** (`{name}`, `{platform}` = WhatsApp).
 3. Either:
    - leave the recipient's phone **online**: the ticks go to delivered, and the alert says "SMS alert not needed: Delivered on WhatsApp"; or
    - first turn **mobile data and Wi-Fi off** on the recipient's phone, keeping the phone on. WhatsApp cannot deliver, so after 5 minutes the relay phone sends the SMS and it arrives right away. In airplane mode the SMS would also wait until the phone is back on the network.

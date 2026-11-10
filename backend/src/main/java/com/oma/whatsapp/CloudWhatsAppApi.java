@@ -87,22 +87,30 @@ class CloudWhatsAppApi implements WhatsAppApi {
 		body.put("to", message.toE164().substring(1));
 		if (message.kind() == Kind.TEXT) {
 			body.put("type", "text");
-			body.put("text", Map.of("body", message.text(), "preview_url", false));
+			body.put("text", ordered("body", message.text(), "preview_url", false));
 			return body;
 		}
 		Map<String, Object> template = new LinkedHashMap<>();
 		template.put("name", message.templateName());
 		template.put("language", Map.of("code", message.templateLanguage()));
 		if (!message.templateParams().isEmpty()) {
-			List<Map<String, String>> parameters = message.templateParams()
+			List<Map<String, Object>> parameters = message.templateParams()
 				.stream()
-				.map(value -> Map.of("type", "text", "text", value))
+				.map(value -> ordered("type", "text", "text", value))
 				.toList();
-			template.put("components", List.of(Map.of("type", "body", "parameters", parameters)));
+			template.put("components", List.of(ordered("type", "body", "parameters", parameters)));
 		}
 		body.put("type", "template");
 		body.put("template", template);
 		return body;
+	}
+
+	/** Keeps fields in the order given ({@code Map.of} order changes from run to run). */
+	private static Map<String, Object> ordered(String key1, Object value1, String key2, Object value2) {
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put(key1, value1);
+		map.put(key2, value2);
+		return map;
 	}
 
 	private JsonNode readError(String responseBody) {

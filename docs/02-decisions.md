@@ -91,3 +91,10 @@ The owner asked whether alerts can be sent through the phone's own SIM instead o
   - A repeating run more than 30 minutes late (backend was off) is skipped, not sent late.
   - Not sent to recipients who opted out. The usual SMS limits apply (3 per recipient per rolling 24 h).
   - Outside WhatsApp's 24 h window the approved template is sent (D9), so with the test number the recipient sees `hello_world`, not the text.
+
+## D13 — Default texts on the send screen, editable per message
+- **Decided:** 2026-11-09. The owner wants a simple default message that goes when WhatsApp does not deliver, with a way to change the texts each time a message is sent (chosen over per-recipient or Settings-only texts).
+- **How:** the send screen starts with the WhatsApp message "Hi {name}, this is a message from {sender}." and the SMS default from alert preferences; both can be edited for that one message, with a preview of what the recipient gets.
+  - The backend fills in `{name}` and `{sender}` in every WhatsApp message (typed or automatic) and rejects other placeholders, so the stored text is what was sent.
+  - `smsText` on `POST /api/v1/whatsapp/messages` is the SMS for that message (`{name}`, `{platform}`, up to 300 characters); empty uses the preference default. Automatic messages use the default.
+- **Limit:** outside WhatsApp's 24 h window the approved template is sent (D9). Until the business has its own template with the text as a variable, the recipient sees the template, not the edited WhatsApp text. The SMS text is always used as written.

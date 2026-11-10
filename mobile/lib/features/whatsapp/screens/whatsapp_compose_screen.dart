@@ -92,9 +92,16 @@ class _Form extends StatelessWidget {
           minLines: 3,
           maxLines: 8,
           maxLength: 1000,
-          decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Message'),
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            labelText: 'WhatsApp message',
+            helperText: 'Edit it for this message. {name} = their name, {sender} = your name.',
+            helperMaxLines: 2,
+          ),
           onChanged: cubit.setText,
         ),
+        if (selected != null && state.text.trim().isNotEmpty)
+          _Preview(label: 'They get', text: state.messagePreview(selected)),
         Text(
           'If they have not written to your business number in the last 24 hours, WhatsApp only allows an '
           'approved template, so they get the template text first. Once they reply, your own text is sent.',
@@ -112,7 +119,7 @@ class _Form extends StatelessWidget {
           value: state.smsAlert,
           onChanged: cubit.setSmsAlert,
         ),
-        if (state.smsAlert)
+        if (state.smsAlert) ...[
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -125,6 +132,28 @@ class _Form extends StatelessWidget {
                 ),
             ],
           ),
+          const SizedBox(height: 16),
+          TextFormField(
+            initialValue: state.smsText,
+            minLines: 2,
+            maxLines: 5,
+            maxLength: WhatsAppComposeState.maxSmsLength,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: 'SMS if not delivered',
+              helperText: 'Edit it for this message. {name} = their name, {platform} = WhatsApp. '
+                  'Never include private details.',
+              helperMaxLines: 2,
+            ),
+            onChanged: cubit.setSmsText,
+          ),
+          if (selected != null && state.smsText.trim().isNotEmpty)
+            _Preview(label: 'SMS', text: state.smsPreview(selected)),
+          Text(
+            'Your default SMS is in Settings → Alert preferences.',
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
         if (state.error != null) ...[
           const SizedBox(height: 16),
           Text(state.error!, style: TextStyle(color: theme.colorScheme.error)),
@@ -136,6 +165,37 @@ class _Form extends StatelessWidget {
           label: Text(state.status == ActionStatus.working ? 'Sending…' : 'Send on WhatsApp'),
         ),
       ],
+    );
+  }
+}
+
+/// Shows a message with the names filled in, as the recipient will see it.
+class _Preview extends StatelessWidget {
+  const _Preview({required this.label, required this.text});
+
+  final String label;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(text: '$label: ', style: const TextStyle(fontWeight: FontWeight.w600)),
+            TextSpan(text: text),
+          ],
+        ),
+        style: theme.textTheme.bodyMedium,
+      ),
     );
   }
 }

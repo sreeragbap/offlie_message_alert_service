@@ -131,10 +131,11 @@ public class AlertService {
 	 * {@code delayMinutes}. Applies the same rules as user-triggered alerts, but never fails: the
 	 * WhatsApp message has already gone out, so a rule that blocks the alert is reported instead.
 	 * Call with the recipient row locked ({@link RecipientRepository#findForUpdate}).
+	 * @param smsTemplate the SMS text written for this message, or null for the user's default
 	 */
 	@Transactional
 	public DeliveryAlert scheduleDeliveryTimeoutAlert(UUID userId, Recipient recipient, UUID clientRequestId,
-			int delayMinutes) {
+			int delayMinutes, String smsTemplate) {
 		if (recipient.optedOut()) {
 			return new DeliveryAlert(null, NoAlertReason.RECIPIENT_OPTED_OUT);
 		}
@@ -151,7 +152,8 @@ public class AlertService {
 		if (alerts.countSentOrPendingForUserSince(userId, windowStart) >= preference.maxAlertsPerDay()) {
 			return new DeliveryAlert(null, NoAlertReason.DAILY_RATE_LIMITED);
 		}
-		String message = preference.render(recipient.displayName(), Platform.WHATSAPP.displayName());
+		String template = smsTemplate != null ? smsTemplate : preference.messageTemplate();
+		String message = AlertPreference.render(template, recipient.displayName(), Platform.WHATSAPP.displayName());
 		if (message.length() > MAX_MESSAGE_LENGTH) {
 			return new DeliveryAlert(null, NoAlertReason.MESSAGE_TOO_LONG);
 		}

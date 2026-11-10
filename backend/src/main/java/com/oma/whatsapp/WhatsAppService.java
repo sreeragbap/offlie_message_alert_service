@@ -5,6 +5,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import com.oma.account.AccountRepository;
 import com.oma.alert.AlertService;
 import com.oma.common.ApiException;
 import com.oma.config.OmaProperties;
+import com.oma.preference.AlertPreference;
 import com.oma.preference.AlertPreferenceRepository;
 import com.oma.recipient.Recipient;
 import com.oma.recipient.RecipientRepository;
@@ -29,6 +32,14 @@ import com.oma.whatsapp.WhatsAppMessage.Status;
 public class WhatsAppService {
 
 	static final int MAX_TEXT_LENGTH = 1000;
+
+	/** WhatsApp's limit for a text message, after {@code {name}} and {@code {sender}} are filled in. */
+	static final int MAX_SENT_LENGTH = 4096;
+
+	/** Same limit as the default SMS text in alert preferences. */
+	static final int MAX_SMS_TEXT_LENGTH = 300;
+
+	private static final Pattern PLACEHOLDER = Pattern.compile("\\{([a-zA-Z]+)}");
 
 	/** WhatsApp allows free-form messages this long after the recipient's last message. */
 	static final Duration SERVICE_WINDOW = Duration.ofHours(24);
@@ -69,11 +80,15 @@ public class WhatsAppService {
 	}
 
 	/**
+	 * @param text the WhatsApp message; {@code {name}} becomes the recipient's name and
+	 * {@code {sender}} the user's name
 	 * @param alertAfterMinutes send the SMS if WhatsApp has not reported delivery after this long;
 	 * null uses the user's default delay; ignored when {@code smsAlert} is false
+	 * @param smsText the SMS for this message, with {@code {name}} and {@code {platform}}; null or
+	 * blank uses the default text from the user's alert preferences
 	 */
 	public record SendCommand(UUID clientRequestId, UUID recipientId, String text, boolean smsAlert,
-			Integer alertAfterMinutes) {
+			Integer alertAfterMinutes, String smsText) {
 	}
 
 	public record Sent(WhatsAppMessage message, boolean replayed) {
@@ -89,7 +104,7 @@ public class WhatsAppService {
 
 	}
 
-	private record Prepared(UUID messageId, boolean replayed, Recipient recipient, Kind kind) {
+	private record Prepared(UUID messageId, boolean replayed, Recipient recipient, Kind kind, String text) {
 	}
 
 	public boolean configured() {
@@ -105,18 +120,25 @@ public class WhatsAppService {
 			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "WHATSAPP_NOT_CONFIGURED",
 					"WhatsApp Business isn't connected yet. See the setup guide.");
 		}
-		String text = command.text() == null ? "" : command.text().strip();
-		if (text.isEmpty() || text.length() > MAX_TEXT_LENGTH) {
+		String template = command.text() == null ? "" : command.text().strip();
+		if (template.isEmpty() || template.length() > MAX_TEXT_LENGTH) {
 			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_TEXT",
 					"Write a message of up to " + MAX_TEXT_LENGTH + " characters.");
 		}
+		validatePlaceholders(template);
+		String smsText = smsText(command.smsText());
 
 		Prepared prepared = tx.execute(status -> {
 			Recipient recipient = recipients.findForUpdate(userId, command.recipientId())
 				.orElseThrow(() -> ApiException.notFound("Recipient"));
 			var existing = messages.findIdByClientRequestId(userId, command.clientRequestId());
 			if (existing.isPresent()) {
-				return new Prepared(existing.get(), true, recipient, null);
+				return new Prepared(existing.get(), true, recipient, null, null);
+			}
+			String text = render(template, recipient.displayName(), senderName(userId));
+			if (text.length() > MAX_SENT_LENGTH) {
+				throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_TEXT",
+						"The message is too long once the names are filled in. Shorten it.");
 			}
 			Instant now = clock.instant();
 			Instant lastInbound = messages.recipientLastInbound(recipient.id()).orElse(null);
@@ -124,13 +146,14 @@ public class WhatsAppService {
 			Kind kind = windowOpen ? Kind.TEXT : Kind.TEMPLATE;
 			return new Prepared(
 					messages.insertPending(userId, recipient.id(), command.clientRequestId(), kind, text, now), false,
-					recipient, kind);
+					recipient, kind, text);
 		});
 		if (prepared.replayed()) {
 			return new Sent(get(userId, prepared.messageId()), true);
 		}
 
-		WhatsAppApi.SendResult result = api.send(outgoing(userId, prepared.recipient(), prepared.kind(), text));
+		WhatsAppApi.SendResult result = api
+			.send(outgoing(userId, prepared.recipient(), prepared.kind(), prepared.text()));
 
 		tx.executeWithoutResult(status -> {
 			switch (result.outcome()) {
@@ -138,13 +161,13 @@ public class WhatsAppService {
 						friendlyError(result.errorCode(), result.errorMessage()));
 				case UNKNOWN -> messages.markFinished(prepared.messageId(), Status.UNKNOWN, result.errorCode(),
 						"WhatsApp did not answer. Check the recipient's chat before sending again.");
-				case ACCEPTED -> accepted(userId, prepared, result.wamid(), command);
+				case ACCEPTED -> accepted(userId, prepared, result.wamid(), command, smsText);
 			}
 		});
 		return new Sent(get(userId, prepared.messageId()), false);
 	}
 
-	private void accepted(UUID userId, Prepared prepared, String wamid, SendCommand command) {
+	private void accepted(UUID userId, Prepared prepared, String wamid, SendCommand command, String smsText) {
 		messages.lockWamid(wamid);
 		messages.markAccepted(prepared.messageId(), wamid);
 		// Statuses that arrived before the wamid was stored.
@@ -165,7 +188,7 @@ public class WhatsAppService {
 		int delay = command.alertAfterMinutes() != null ? command.alertAfterMinutes()
 				: Math.max(1, preferences.get(userId).defaultDelayMinutes());
 		AlertService.DeliveryAlert alert = alerts.scheduleDeliveryTimeoutAlert(userId, recipient,
-				command.clientRequestId(), delay);
+				command.clientRequestId(), delay, smsText);
 		messages.linkAlert(prepared.messageId(), alert.alertId(),
 				alert.skippedBecause() == null ? null : alert.skippedBecause().name());
 		if (alert.alertId() != null && current.status() == Status.FAILED) {
@@ -178,7 +201,7 @@ public class WhatsAppService {
 			return new WhatsAppApi.OutgoingMessage(recipient.phoneE164(), WhatsAppApi.Kind.TEXT, text, null, null,
 					List.of());
 		}
-		String sender = accounts.findDisplayName(userId).filter(name -> !name.isBlank()).orElse("Someone");
+		String sender = senderName(userId);
 		List<String> params = config.templateParamsOrEmpty().stream().map(String::strip).map(param -> switch (param) {
 			case "sender" -> sender;
 			case "name" -> recipient.displayName();
@@ -187,6 +210,40 @@ public class WhatsAppService {
 		}).map(WhatsAppService::templateSafe).toList();
 		return new WhatsAppApi.OutgoingMessage(recipient.phoneE164(), WhatsAppApi.Kind.TEMPLATE, null,
 				config.templateName(), config.templateLanguage(), params);
+	}
+
+	/** The user's name as recipients see it, for {@code {sender}}. */
+	public String senderName(UUID userId) {
+		return accounts.findDisplayName(userId).filter(name -> !name.isBlank()).orElse("Someone");
+	}
+
+	static String render(String template, String recipientName, String senderName) {
+		return template.replace("{name}", recipientName).replace("{sender}", senderName);
+	}
+
+	private static void validatePlaceholders(String template) {
+		Matcher matcher = PLACEHOLDER.matcher(template);
+		while (matcher.find()) {
+			String key = matcher.group(1);
+			if (!key.equals("name") && !key.equals("sender")) {
+				throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_TEXT",
+						"Unknown placeholder {" + key + "}. Use {name} or {sender}.");
+			}
+		}
+	}
+
+	/** The SMS written for this message, checked; null when it is empty (the default text is used). */
+	private static String smsText(String value) {
+		String text = value == null ? "" : value.strip();
+		if (text.isEmpty()) {
+			return null;
+		}
+		if (text.length() > MAX_SMS_TEXT_LENGTH) {
+			throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_SMS_TEXT",
+					"Write an SMS of up to " + MAX_SMS_TEXT_LENGTH + " characters.");
+		}
+		AlertPreference.validateTemplate(text);
+		return text;
 	}
 
 	/** Template variables may not contain new lines, tabs or more than four spaces in a row. */

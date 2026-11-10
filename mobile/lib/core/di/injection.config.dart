@@ -143,6 +143,15 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i144.PlatformRepository>(
       () => _i643.PlatformService(gh<_i772.ApiClient>()),
     );
+    gh.factoryParam<_i908.WhatsAppComposeCubit, String?, dynamic>(
+      (recipientId, _) => _i908.WhatsAppComposeCubit(
+        gh<_i273.RecipientRepository>(),
+        gh<_i1005.AlertPreferencesRepository>(),
+        gh<_i831.WhatsAppRepository>(),
+        gh<_i666.AccountRepository>(),
+        recipientId: recipientId,
+      ),
+    );
     gh.factory<_i332.WhatsAppCubit>(
       () => _i332.WhatsAppCubit(gh<_i831.WhatsAppRepository>()),
     );
@@ -156,14 +165,6 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i82.PreferencesCubit>(
       () => _i82.PreferencesCubit(gh<_i1005.AlertPreferencesRepository>()),
-    );
-    gh.factoryParam<_i908.WhatsAppComposeCubit, String?, dynamic>(
-      (recipientId, _) => _i908.WhatsAppComposeCubit(
-        gh<_i273.RecipientRepository>(),
-        gh<_i1005.AlertPreferencesRepository>(),
-        gh<_i831.WhatsAppRepository>(),
-        recipientId: recipientId,
-      ),
     );
     gh.factoryParam<_i259.NewAlertCubit, String?, dynamic>(
       (recipientId, _) => _i259.NewAlertCubit(

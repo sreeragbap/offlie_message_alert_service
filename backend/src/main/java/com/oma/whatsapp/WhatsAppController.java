@@ -34,8 +34,9 @@ class WhatsAppController {
 	record StatusResponse(boolean connected, String templateName) {
 	}
 
+	/** {@code smsText} is optional: the SMS for this message; empty uses the default from preferences. */
 	record SendRequest(@NotNull UUID clientRequestId, @NotNull UUID recipientId, @NotNull String text,
-			Boolean smsAlert, @Min(1) @Max(1440) Integer alertAfterMinutes) {
+			Boolean smsAlert, @Min(1) @Max(1440) Integer alertAfterMinutes, String smsText) {
 	}
 
 	record AlertSummary(UUID id, String state, Instant dueAt, String note) {
@@ -65,7 +66,8 @@ class WhatsAppController {
 	ResponseEntity<MessageResponse> send(CurrentUser user, @Valid @RequestBody SendRequest request) {
 		WhatsAppService.Sent sent = service.send(user.id(),
 				new WhatsAppService.SendCommand(request.clientRequestId(), request.recipientId(), request.text(),
-						request.smsAlert() == null || request.smsAlert(), request.alertAfterMinutes()));
+						request.smsAlert() == null || request.smsAlert(), request.alertAfterMinutes(),
+						request.smsText()));
 		MessageResponse body = MessageResponse.of(sent.message());
 		return sent.replayed() ? ResponseEntity.ok(body)
 				: ResponseEntity.created(URI.create("/api/v1/whatsapp/messages/" + body.id())).body(body);

@@ -39,8 +39,6 @@ public class AutoMessageScheduler {
 
 	private final AutoMessageRepository autoMessages;
 
-	private final AutoMessageService service;
-
 	private final RecipientRepository recipients;
 
 	private final WhatsAppService whatsApp;
@@ -49,10 +47,9 @@ public class AutoMessageScheduler {
 
 	private final Clock clock;
 
-	AutoMessageScheduler(AutoMessageRepository autoMessages, AutoMessageService service,
-			RecipientRepository recipients, WhatsAppService whatsApp, TransactionTemplate tx, Clock clock) {
+	AutoMessageScheduler(AutoMessageRepository autoMessages, RecipientRepository recipients,
+			WhatsAppService whatsApp, TransactionTemplate tx, Clock clock) {
 		this.autoMessages = autoMessages;
-		this.service = service;
 		this.recipients = recipients;
 		this.whatsApp = whatsApp;
 		this.tx = tx;
@@ -102,10 +99,11 @@ public class AutoMessageScheduler {
 			autoMessages.recordResult(m.recipientId(), null, "Not sent: they asked not to be alerted.");
 			return;
 		}
-		String text = m.render(recipient.displayName(), service.senderName(m.userId()));
 		try {
+			// WhatsAppService fills in {name} and {sender}; the SMS uses the default text.
 			WhatsAppService.Sent sent = whatsApp.send(m.userId(), new WhatsAppService.SendCommand(
-					requestId(m.recipientId(), run.slot()), m.recipientId(), text, true, m.smsAfterMinutes()));
+					requestId(m.recipientId(), run.slot()), m.recipientId(), m.text(), true, m.smsAfterMinutes(),
+					null));
 			autoMessages.recordResult(m.recipientId(), sent.messageId(), sent.error());
 		}
 		catch (ApiException ex) {

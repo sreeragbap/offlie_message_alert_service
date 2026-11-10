@@ -8,11 +8,14 @@ abstract class WhatsAppRepository {
   Future<List<WaMessage>> recent({String? recipientId, int limit = 50});
 
   /// [clientRequestId] makes retries safe: the server returns the original message.
+  /// [text] may use {name} and {sender}; [smsText] (with {name} and {platform}) is the SMS for this
+  /// message, null for the default from alert preferences.
   Future<WaMessage> send({
     required String clientRequestId,
     required String recipientId,
     required String text,
     required bool smsAlert,
     required int alertAfterMinutes,
+    String? smsText,
   });
 }

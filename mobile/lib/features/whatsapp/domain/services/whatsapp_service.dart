@@ -29,6 +29,7 @@ class WhatsAppService implements WhatsAppRepository {
     required String text,
     required bool smsAlert,
     required int alertAfterMinutes,
+    String? smsText,
   }) async {
     final json = await _api.post('/whatsapp/messages', {
       'clientRequestId': clientRequestId,
@@ -36,6 +37,7 @@ class WhatsAppService implements WhatsAppRepository {
       'text': text,
       'smsAlert': smsAlert,
       'alertAfterMinutes': alertAfterMinutes,
+      'smsText': ?smsText,
     });
     return WaMessage.fromJson(json as Map<String, dynamic>);
   }

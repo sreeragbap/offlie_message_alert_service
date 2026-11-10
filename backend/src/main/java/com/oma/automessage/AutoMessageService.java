@@ -94,7 +94,7 @@ class AutoMessageService {
 		return new View(autoMessage, autoMessage.render(recipient.displayName(), senderName(recipient.userId())));
 	}
 
-	String senderName(UUID userId) {
+	private String senderName(UUID userId) {
 		return accounts.findDisplayName(userId).filter(name -> !name.isBlank()).orElse("Someone");
 	}
 

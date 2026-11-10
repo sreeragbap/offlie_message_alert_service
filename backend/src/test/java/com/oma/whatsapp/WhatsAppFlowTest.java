@@ -63,6 +63,35 @@ class WhatsAppFlowTest extends IntegrationTest {
 	}
 
 	@Test
+	void namesAreFilledInAndTheSmsUsesTheTextWrittenForThisMessage() throws Exception {
+		send(UUID.randomUUID(), "Hi {name}, this is {sender}.", "Hi {name}, please check {platform}.")
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.text").value("Hi Anu, this is Someone."));
+
+		assertThat(whatsApp.sent.get(0).templateParams()).containsExactly("Someone", "Hi Anu, this is Someone.");
+		assertThat(alertColumn("message_text")).isEqualTo("Hi Anu, please check WhatsApp.");
+	}
+
+	@Test
+	void withoutAnSmsTextTheDefaultFromPreferencesIsUsed() throws Exception {
+		send(UUID.randomUUID(), "Hello", "  ").andExpect(status().isCreated());
+
+		assertThat(alertColumn("message_text"))
+			.isEqualTo("Hi Anu, I've sent you a message on WhatsApp. Please check it when you can.");
+	}
+
+	@Test
+	void unknownPlaceholdersAreRejectedBeforeAnythingIsSent() throws Exception {
+		send(UUID.randomUUID(), "Hi {phone}", null).andExpect(status().isUnprocessableContent())
+			.andExpect(jsonPath("$.code").value("INVALID_TEXT"));
+		send(UUID.randomUUID(), "Hello", "Hi {sender}").andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("INVALID_TEMPLATE"));
+
+		assertThat(whatsApp.sent).isEmpty();
+		assertThat(count("app.wa_message")).isZero();
+	}
+
+	@Test
 	void retryWithTheSameRequestIdDoesNotSendTwice() throws Exception {
 		UUID requestId = UUID.randomUUID();
 		send(requestId, "Hello").andExpect(status().isCreated());
@@ -232,11 +261,16 @@ class WhatsAppFlowTest extends IntegrationTest {
 	}
 
 	private ResultActions send(UUID requestId, String text) throws Exception {
+		return send(requestId, text, null);
+	}
+
+	private ResultActions send(UUID requestId, String text, String smsText) throws Exception {
+		String sms = smsText == null ? "null" : "\"" + smsText + "\"";
 		return mvc.perform(post("/api/v1/whatsapp/messages").with(as(alice))
 			.contentType(MediaType.APPLICATION_JSON)
 			.content("""
-					{"clientRequestId":"%s","recipientId":"%s","text":"%s","alertAfterMinutes":15}
-					""".formatted(requestId, anu, text)));
+					{"clientRequestId":"%s","recipientId":"%s","text":"%s","alertAfterMinutes":15,"smsText":%s}
+					""".formatted(requestId, anu, text, sms)));
 	}
 
 	private ResultActions webhook(String json) throws Exception {
